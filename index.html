@@ -105,17 +105,17 @@ async function enviarDados(event) {
     const diaSemanaNum = dataObj.getDay();
 
     
+    
     const dados = {
         origem: orig,
         destino: dest,
         distanciaKm: parseFloat(dist),
         dataPartida: dataInput,
-        // Campos extras que a IA precisa (o Java vai repassar pro Flask)
-        umidadePerc: 0.0,
-        horaPartida: 12.0,
-        trafegoCritico: 0.0,
-        tempCelsius: 22.3,
-        ventoKmh: 6.6,
+        horaPartida: 12,       
+        umidadePerc: 0.0,    
+        trafegoCritico: 0.0,   
+        tempCelsius: 22.3,     
+        ventoKmh: 6.6,        
         diaSemana: diaSemanaNum
     };
 
