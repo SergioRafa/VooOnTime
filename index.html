@@ -106,17 +106,15 @@ async function enviarDados(event) {
 
     
     
+
+    const dataHoraISO = dataInput + "T12:00:00"; 
+
     const dados = {
+        companhia: "LATAM", 
         origem: orig,
         destino: dest,
-        distanciaKm: parseFloat(dist),
-        dataPartida: dataInput,
-        horaPartida: 12,       
-        umidadePerc: 0.0,    
-        trafegoCritico: 0.0,   
-        tempCelsius: 22.3,     
-        ventoKmh: 6.6,        
-        diaSemana: diaSemanaNum
+        dataPartida: dataHoraISO, 
+        distanciaKm: parseFloat(dist)
     };
 
     btn.disabled = true;
