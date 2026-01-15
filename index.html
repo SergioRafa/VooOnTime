@@ -88,27 +88,35 @@ async function enviarDados(event) {
     const orig = document.getElementById('origem').value.toUpperCase().trim();
     const dest = document.getElementById('destino').value.toUpperCase().trim();
     const dist = document.getElementById('distanciaKm').value;
-    const data = document.getElementById('dataPartida').value;
+    const dataInput = document.getElementById('dataPartida').value;
 
-    if(!orig || !dest || !dist || !data){
+    if(!orig || !dest || !dist || !dataInput){
         alert("Preencha todos os campos.");
         return;
     }
 
-    if(orig === ultimaBusca.origem && dest === ultimaBusca.destino && data === ultimaBusca.data){
+    if(orig === ultimaBusca.origem && dest === ultimaBusca.destino && dataInput === ultimaBusca.data){
         msg.innerHTML = `<p style="color:#f1c40f;">⚠️ Esta rota já foi analisada para esta data.</p>`;
         return;
     }
 
-    // Payload alinhado com o Flask
+    // Tratamento correto da data para pegar o dia da semana (0-6)
+    const dataObj = new Date(dataInput + "T12:00:00"); // Força meio-dia para evitar erro de fuso
+    const diaSemanaNum = dataObj.getDay();
+
+    
     const dados = {
-        origem_GIG: orig === "GIG" ? 1.0 : 0.0,
-        distancia_km: parseFloat(dist),
-        trafego_critico: 0.0,
-        vento_kmh: 6.6,
-        temp_celsius: 22.3,
-        hora_partida: 12.0,
-        dia_semana: new Date(data).getDay()
+        origem: orig,
+        destino: dest,
+        distanciaKm: parseFloat(dist),
+        dataPartida: dataInput,
+        // Campos extras que a IA precisa (o Java vai repassar pro Flask)
+        umidadePerc: 0.0,
+        horaPartida: 12.0,
+        trafegoCritico: 0.0,
+        tempCelsius: 22.3,
+        ventoKmh: 6.6,
+        diaSemana: diaSemanaNum
     };
 
     btn.disabled = true;
@@ -119,43 +127,48 @@ async function enviarDados(event) {
     try {
         const response = await fetch('https://uncompulsive-shelly-nonclerically.ngrok-free.dev/api/previsao/predict', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
             body: JSON.stringify(dados)
         });
 
-        if(!response.ok) throw new Error("Erro no backend");
+        if(!response.ok) {
+            const erroTexto = await response.text();
+            console.error("Erro do Servidor:", erroTexto);
+            throw new Error("Erro no backend: " + response.status);
+        }
 
         const res = await response.json();
 
-        if(res.probabilidade === undefined){
+        // O Java deve retornar um objeto que contenha a probabilidade
+        const probabilidadeVal = res.probabilidade !== undefined ? res.probabilidade : res.resultado;
+
+        if(probabilidadeVal === undefined){
             throw new Error("Resposta inválida do modelo");
         }
 
-        ultimaBusca = { origem: orig, destino: dest, data: data };
+        ultimaBusca = { origem: orig, destino: dest, data: dataInput };
 
-        const probPerc = Math.round(res.probabilidade * 100);
+        const probPerc = Math.round(probabilidadeVal * 100);
         const emoji = probPerc > 50 ? '⚠️' : '✅';
 
-        let classeColor = probPerc > 50
-            ? 'resultado-perigo'
-            : probPerc > 25
-                ? 'resultado-alerta'
-                : 'resultado-sucesso';
-
+        let classeColor = probPerc > 50 ? 'resultado-perigo' : probPerc > 25 ? 'resultado-alerta' : 'resultado-sucesso';
         resDiv.className = `resultado-container ${classeColor}`;
 
         msg.innerHTML = `
             <h2>${emoji} Risco de Atraso: ${probPerc}%</h2>
-            <p>🌡️ ${dados.temp_celsius}°C | 🌬️ ${dados.vento_kmh} km/h</p>
+            <p>🌡️ ${res.tempCelsius || 22.3}°C | 🌬️ ${res.ventoKmh || 6.6} km/h</p>
             <span class="info-rota">${orig} ➔ ${dest}</span>
         `;
 
-        adicionarAoHistorico(orig, dest, dados.temp_celsius, dados.vento_kmh, probPerc);
+        adicionarAoHistorico(orig, dest, (res.tempCelsius || 22.3), (res.ventoKmh || 6.6), probPerc);
 
     } catch (e) {
         console.error(e);
         resDiv.className = 'resultado-container resultado-perigo';
-        msg.innerHTML = `<p>❌ Falha de comunicação com o servidor.</p>`;
+        msg.innerHTML = `<p>❌ Falha: ${e.message}</p>`;
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-microchip"></i> EXECUTAR NOVA ANÁLISE';
@@ -165,12 +178,7 @@ async function enviarDados(event) {
 function adicionarAoHistorico(orig, dest, temp, vento, prob){
     const corpo = document.getElementById('corpo-historico');
     const row = corpo.insertRow(0);
-
-    const badge = prob > 50
-        ? 'badge-perigo'
-        : prob > 25
-            ? 'badge-alerta'
-            : 'badge-sucesso';
+    const badge = prob > 50 ? 'badge-perigo' : prob > 25 ? 'badge-alerta' : 'badge-sucesso';
 
     row.innerHTML = `
         <td><strong>${orig}</strong> ➔ <strong>${dest}</strong></td>
@@ -178,7 +186,8 @@ function adicionarAoHistorico(orig, dest, temp, vento, prob){
         <td>${vento} km/h</td>
         <td><span class="badge ${badge}">${prob}%</span></td>
     `;
-}
+} 
 </script>
+
 </body>
 </html>
