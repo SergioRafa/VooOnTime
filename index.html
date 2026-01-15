@@ -4,169 +4,181 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flight On Time - Dashboard IA</title>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    
+
     <style>
         input#origem, input#destino { text-transform: uppercase; }
         .loading-text { color: var(--secondary); font-weight: bold; animation: blink 1.5s infinite; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        /* Pequeno ajuste para destacar a rota no card principal */
         .info-rota { font-size: 0.8rem; opacity: 0.8; margin-top: 5px; display: block; }
     </style>
 </head>
+
 <body>
-    <main class="apresentacao">
-        <section class="apresentacao__conteudo">
-            <h1 class="apresentacao__conteudo__titulo">✈️ Flight <span class="titulo-destaque">On Time</span></h1>
-            <p>Monitoramento Preditivo de Operações Aéreas</p>
-            
-            <form id="meuFormulario" class="pesquisar">
-                <div class="field-container">
-                    <label><i class="fas fa-plane-departure"></i> Origem</label>
-                    <input type="text" id="origem" placeholder="Ex: GIG" maxlength="3" required>
-                </div>
-                <div class="field-container">
-                    <label><i class="fas fa-plane-arrival"></i> Destino</label>
-                    <input type="text" id="destino" placeholder="Ex: GRU" maxlength="3" required>
-                </div>
-                <div class="field-container">
-                    <label><i class="fas fa-route"></i> Distância (Km)</label>
-                    <input type="number" id="distanciaKm" placeholder="Ex: 500" required>
-                </div>
-                <div class="field-container">
-                    <label><i class="fas fa-calendar-alt"></i> Data</label>
-                    <input type="date" id="dataPartida" required>
-                </div>
-                <button type="button" class="btn-analisar" id="btnAnalisar" onclick="enviarDados(event)">
-                    <i class="fas fa-microchip"></i> EXECUTAR ANÁLISE IA
-                </button>
-            </form>
+<main class="apresentacao">
+    <section class="apresentacao__conteudo">
+        <h1 class="apresentacao__conteudo__titulo">
+            ✈️ Flight <span class="titulo-destaque">On Time</span>
+        </h1>
+        <p>Monitoramento Preditivo de Operações Aéreas</p>
 
-            <div id="resultado" class="resultado-container" style="display:none;">
-                <div id="mensagem-retorno"></div>
+        <form class="pesquisar">
+            <div class="field-container">
+                <label><i class="fas fa-plane-departure"></i> Origem</label>
+                <input type="text" id="origem" placeholder="Ex: GIG" maxlength="3" required>
             </div>
 
-            <div class="historico-container">
-                <h3><i class="fas fa-history"></i> Histórico de Monitoramento</h3>
-                <table class="historico-table">
-                    <thead>
-                        <tr>
-                            <th>Voo</th>
-                            <th>Clima</th>
-                            <th>Vento</th>
-                            <th>Risco</th>
-                        </tr>
-                    </thead>
-                    <tbody id="corpo-historico">
-                        </tbody>
-                </table>
+            <div class="field-container">
+                <label><i class="fas fa-plane-arrival"></i> Destino</label>
+                <input type="text" id="destino" placeholder="Ex: GRU" maxlength="3" required>
             </div>
-        </section>
 
-        <img class="apresentacao__imagem" src="https://images.unsplash.com/photo-1542296332-2e4473faf563?q=80&w=1000&auto=format&fit=crop" alt="Avião decolando">
-    </main>
+            <div class="field-container">
+                <label><i class="fas fa-route"></i> Distância (Km)</label>
+                <input type="number" id="distanciaKm" placeholder="Ex: 500" required>
+            </div>
 
-    <script>
-// Variável global para memorizar a última busca
+            <div class="field-container">
+                <label><i class="fas fa-calendar-alt"></i> Data</label>
+                <input type="date" id="dataPartida" required>
+            </div>
+
+            <button type="button" class="btn-analisar" id="btnAnalisar" onclick="enviarDados(event)">
+                <i class="fas fa-microchip"></i> EXECUTAR ANÁLISE IA
+            </button>
+        </form>
+
+        <div id="resultado" class="resultado-container" style="display:none;">
+            <div id="mensagem-retorno"></div>
+        </div>
+
+        <div class="historico-container">
+            <h3><i class="fas fa-history"></i> Histórico de Monitoramento</h3>
+            <table class="historico-table">
+                <thead>
+                    <tr>
+                        <th>Voo</th>
+                        <th>Clima</th>
+                        <th>Vento</th>
+                        <th>Risco</th>
+                    </tr>
+                </thead>
+                <tbody id="corpo-historico"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <img class="apresentacao__imagem"
+         src="https://images.unsplash.com/photo-1542296332-2e4473faf563?q=80&w=1000&auto=format&fit=crop"
+         alt="Avião decolando">
+</main>
+
+<script>
 let ultimaBusca = { origem: "", destino: "", data: "" };
 
 async function enviarDados(event) {
     if(event) event.preventDefault();
-    
+
     const msg = document.getElementById('mensagem-retorno');
     const resDiv = document.getElementById('resultado');
     const btn = document.getElementById('btnAnalisar');
 
-    // 1. Captura de valores
     const orig = document.getElementById('origem').value.toUpperCase().trim();
     const dest = document.getElementById('destino').value.toUpperCase().trim();
     const dist = document.getElementById('distanciaKm').value;
     const data = document.getElementById('dataPartida').value;
 
-    if(!orig || !dest || !dist || !data) {
-        alert("Por favor, preencha todos os campos.");
+    if(!orig || !dest || !dist || !data){
+        alert("Preencha todos os campos.");
         return;
     }
 
-    // 2. BLINDAGEM: Verifica se a busca é idêntica à última realizada
-    if (orig === ultimaBusca.origem && dest === ultimaBusca.destino && data === ultimaBusca.data) {
-        msg.innerHTML = `<p style="color: #f1c40f;">⚠️ Você já analisou esta rota para esta data. Altere os campos para uma nova consulta.</p>`;
-        return; // Interrompe a execução aqui
+    if(orig === ultimaBusca.origem && dest === ultimaBusca.destino && data === ultimaBusca.data){
+        msg.innerHTML = `<p style="color:#f1c40f;">⚠️ Esta rota já foi analisada para esta data.</p>`;
+        return;
     }
 
+    // Payload alinhado com o Flask
     const dados = {
-        companhia: "Latam",
-        origem: orig,
-        destino: dest,
-        dataPartida: data + "T12:00:00", 
-        distanciaKm: parseFloat(dist)
+        origem_GIG: orig === "GIG" ? 1.0 : 0.0,
+        distancia_km: parseFloat(dist),
+        trafego_critico: 0.0,
+        vento_kmh: 6.6,
+        temp_celsius: 22.3,
+        hora_partida: 12.0,
+        dia_semana: new Date(data).getDay()
     };
 
-    // UI: Iniciando consulta
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ANALISANDO...';
     resDiv.style.display = 'block';
-    msg.innerHTML = '<p class="loading-text">📡 Consultando IA e Clima Real...</p>';
+    msg.innerHTML = '<p class="loading-text">📡 Consultando modelo de IA...</p>';
 
     try {
-        const url = 'https://uncompulsive-shelly-nonclerically.ngrok-free.dev/api/previsao/predict';
-        
-        const response = await fetch(url, {
+        const response = await fetch('http://192.168.1.17:5000/predict', {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'ngrok-skip-browser-warning': 'true' 
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(dados)
         });
 
-        if (!response.ok) throw new Error(`Erro: ${response.status}`);
+        if(!response.ok) throw new Error("Erro no backend");
 
         const res = await response.json();
 
-        // 3. SE SUCESSO: Atualiza a "Memória" da última busca
+        if(res.probabilidade === undefined){
+            throw new Error("Resposta inválida do modelo");
+        }
+
         ultimaBusca = { origem: orig, destino: dest, data: data };
 
-        const probValue = res.probabilidade !== undefined ? res.probabilidade : 0;
-        const probPerc = Math.round(probValue * 100);
-        const temp = res.temp_celsius !== undefined ? res.temp_celsius : "--";
-        const vento = res.vento_kmh !== undefined ? res.vento_kmh : "--";
+        const probPerc = Math.round(res.probabilidade * 100);
+        const emoji = probPerc > 50 ? '⚠️' : '✅';
 
-        let classeColor = probPerc > 50 ? 'resultado-perigo' : (probPerc > 25 ? 'resultado-alerta' : 'resultado-sucesso');
+        let classeColor = probPerc > 50
+            ? 'resultado-perigo'
+            : probPerc > 25
+                ? 'resultado-alerta'
+                : 'resultado-sucesso';
+
         resDiv.className = `resultado-container ${classeColor}`;
-        
+
         msg.innerHTML = `
-            <h2>Risco de Atraso: ${probPerc}%</h2>
-            <p>🌡️ <strong>Temp:</strong> ${temp}°C | 🌬️ <strong>Vento:</strong> ${vento} km/h</p>
+            <h2>${emoji} Risco de Atraso: ${probPerc}%</h2>
+            <p>🌡️ ${dados.temp_celsius}°C | 🌬️ ${dados.vento_kmh} km/h</p>
             <span class="info-rota">${orig} ➔ ${dest}</span>
         `;
 
-        adicionarAoHistorico(orig, dest, temp, vento, probPerc);
+        adicionarAoHistorico(orig, dest, dados.temp_celsius, dados.vento_kmh, probPerc);
 
     } catch (e) {
-        console.error("Erro na integração:", e);
+        console.error(e);
         resDiv.className = 'resultado-container resultado-perigo';
-        msg.innerHTML = `<p>❌ Erro de Conexão: O servidor está ativo?</p>`;
+        msg.innerHTML = `<p>❌ Falha de comunicação com o servidor.</p>`;
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-microchip"></i> EXECUTAR NOVA ANÁLISE';
     }
 }
 
-function adicionarAoHistorico(orig, dest, temp, vento, prob) {
+function adicionarAoHistorico(orig, dest, temp, vento, prob){
     const corpo = document.getElementById('corpo-historico');
-    const novaLinha = corpo.insertRow(0);
-    let classeBadge = prob > 50 ? 'badge-perigo' : (prob > 25 ? 'badge-alerta' : 'badge-sucesso');
-    
-    novaLinha.innerHTML = `
+    const row = corpo.insertRow(0);
+
+    const badge = prob > 50
+        ? 'badge-perigo'
+        : prob > 25
+            ? 'badge-alerta'
+            : 'badge-sucesso';
+
+    row.innerHTML = `
         <td><strong>${orig}</strong> ➔ <strong>${dest}</strong></td>
         <td>${temp}°C</td>
         <td>${vento} km/h</td>
-        <td><span class="badge ${classeBadge}">${prob}%</span></td>
+        <td><span class="badge ${badge}">${prob}%</span></td>
     `;
-    novaLinha.style.animation = "fadeInUp 0.5s ease-out forwards";
 }
-    </script>
+</script>
 </body>
 </html>

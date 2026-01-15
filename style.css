@@ -192,4 +192,4 @@ input:focus {
 @media (max-width: 900px) {
     .apresentacao { flex-direction: column; }
     .apresentacao__conteudo, .apresentacao__imagem { width: 100%; max-width: 100%; }
-}
+} 
