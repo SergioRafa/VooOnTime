@@ -140,28 +140,31 @@ async function enviarDados(event) {
 
         const res = await response.json();
 
-        // O Java deve retornar um objeto que contenha a probabilidade
-        const probabilidadeVal = res.probabilidade !== undefined ? res.probabilidade : res.resultado;
+        // Mapeamento direto dos campos do seu DTO Java
+        const tempReal = res.temp_celsius;
+        const ventoReal = res.vento_kmh;
+        const probabilidadeVal = res.probabilidade;
 
-        if(probabilidadeVal === undefined){
-            throw new Error("Resposta inválida do modelo");
-        }
-
+        // Atualiza o objeto de última busca
         ultimaBusca = { origem: orig, destino: dest, data: dataInput };
 
+        // Cálculos para exibição
         const probPerc = Math.round(probabilidadeVal * 100);
         const emoji = probPerc > 50 ? '⚠️' : '✅';
 
+        // Define a cor do container de resultado
         let classeColor = probPerc > 50 ? 'resultado-perigo' : probPerc > 25 ? 'resultado-alerta' : 'resultado-sucesso';
         resDiv.className = `resultado-container ${classeColor}`;
 
+        // Atualiza a mensagem na tela com os dados REAIS vindos do Java
         msg.innerHTML = `
             <h2>${emoji} Risco de Atraso: ${probPerc}%</h2>
-            <p>🌡️ ${res.tempCelsius || 22.3}°C | 🌬️ ${res.ventoKmh || 6.6} km/h</p>
+            <p>🌡️ ${tempReal.toFixed(1)}°C | 🌬️ ${ventoReal.toFixed(1)} km/h</p>
             <span class="info-rota">${orig} ➔ ${dest}</span>
         `;
 
-        adicionarAoHistorico(orig, dest, (res.tempCelsius || 22.3), (res.ventoKmh || 6.6), probPerc);
+        // ALIMENTA O HISTÓRICO COM OS DADOS REAIS
+        adicionarAoHistorico(orig, dest, tempReal.toFixed(1), ventoReal.toFixed(1), probPerc);
 
     } catch (e) {
         console.error(e);
