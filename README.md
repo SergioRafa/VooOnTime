@@ -32,3 +32,9 @@ DevOps & Cloud: GitHub Pages, Git, Ngrok.
 Aeroporto	Condições Climáticas	Tráfego	Risco Calculado
 Manaus (MAO)	28.1°C / Vento 12.7km/h	Normal	20% (Baixo)
 Guarulhos (GRU)	28.1°C / Vento 12.7km/h	Crítico	85% (Alto)
+
+📊 Modo Demo gerou nos logs:
+Aeroporto,Condições Climáticas,Tráfego,Risco Calculado,Status
+Manaus (MAO),31.2°C / Vento 4.5km/h,Normal,20%,✅ Pontual
+Curitiba (CWB),17.5°C / Vento 14.2km/h,Normal,20%,✅ Pontual
+Guarulhos (GRU),24.5°C / Vento 8.0km/h,Crítico,85%,⚠️ Risco Alto
