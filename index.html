@@ -156,12 +156,17 @@ async function enviarDados(event) {
         let classeColor = probPerc > 50 ? 'resultado-perigo' : probPerc > 25 ? 'resultado-alerta' : 'resultado-sucesso';
         resDiv.className = `resultado-container ${classeColor}`;
 
-        // Atualiza a mensagem na tela com os dados REAIS vindos do Java
-        msg.innerHTML = `
-            <h2>${emoji} Risco de Atraso: ${probPerc}%</h2>
-            <p>🌡️ ${tempReal.toFixed(1)}°C | 🌬️ ${ventoReal.toFixed(1)} km/h</p>
-            <span class="info-rota">${orig} ➔ ${dest}</span>
-        `;
+      // Pega os dados de dentro da resposta do Java (ajuste os nomes se necessário)
+const probPerc = (data.probabilidade * 100).toFixed(0);
+const tempReal = data.dadosClimaticos ? data.dadosClimaticos.temperaturaC : 0;
+const ventoReal = data.dadosClimaticos ? data.dadosClimaticos.velocidadeVentoKmH : 0;
+
+// Agora atualiza a mensagem na tela com segurança
+msg.innerHTML = `
+    <h2>${emoji} Risco de Atraso: ${probPerc}%</h2>
+    <p>🌡️ ${Number(tempReal).toFixed(1)}°C | 🌬️ ${Number(ventoReal).toFixed(1)} km/h</p>
+    <span class="info-rota">${orig} ➔ ${dest}</span>
+`;
 
         // ALIMENTA O HISTÓRICO COM OS DADOS REAIS
         adicionarAoHistorico(orig, dest, tempReal.toFixed(1), ventoReal.toFixed(1), probPerc);
