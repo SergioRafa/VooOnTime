@@ -100,16 +100,8 @@ async function enviarDados(event) {
         return;
     }
 
-    // Tratamento correto da data para pegar o dia da semana (0-6)
-    const dataObj = new Date(dataInput + "T12:00:00"); // Força meio-dia para evitar erro de fuso
-    const diaSemanaNum = dataObj.getDay();
-
-    
-    
-
     const dataHoraISO = dataInput + "T12:00:00"; 
-
-    const dados = {
+    const dadosEnvio = {
         companhia: "LATAM", 
         origem: orig,
         destino: dest,
@@ -129,47 +121,40 @@ async function enviarDados(event) {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify(dados)
+            body: JSON.stringify(dadosEnvio)
         });
 
-        if(!response.ok) {
-            const erroTexto = await response.text();
-            console.error("Erro do Servidor:", erroTexto);
-            throw new Error("Erro no backend: " + response.status);
-        }
+        if(!response.ok) throw new Error("Erro no servidor: " + response.status);
 
-        const res = await response.json();
+        const res = await response.json(); // 'res' é a nossa variável de resposta
 
-        // Mapeamento direto dos campos do seu DTO Java
-        const tempReal = res.temp_celsius;
-        const ventoReal = res.vento_kmh;
-        const probabilidadeVal = res.probabilidade;
+        // --- TRATAMENTO DOS DADOS VINDOS DO JAVA ---
+        const probabilidadeVal = res.probabilidade || 0;
+        const probPerc = Math.round(probabilidadeVal * 100);
+        
+        // Acessando os dados climáticos dentro do objeto correto
+        const tempReal = res.dadosClimaticos ? res.dadosClimaticos.temperaturaC : 0;
+        const ventoReal = res.dadosClimaticos ? res.dadosClimaticos.velocidadeVentoKmH : 0;
+        const alertas = res.alertasExternos || [];
 
-        // Atualiza o objeto de última busca
         ultimaBusca = { origem: orig, destino: dest, data: dataInput };
 
-        // Cálculos para exibição
-        const probPerc = Math.round(probabilidadeVal * 100);
+        // Define a cor e o emoji
         const emoji = probPerc > 50 ? '⚠️' : '✅';
-
-        // Define a cor do container de resultado
         let classeColor = probPerc > 50 ? 'resultado-perigo' : probPerc > 25 ? 'resultado-alerta' : 'resultado-sucesso';
         resDiv.className = `resultado-container ${classeColor}`;
 
-      // Pega os dados de dentro da resposta do Java (ajuste os nomes se necessário)
-const probPerc = (data.probabilidade * 100).toFixed(0);
-const tempReal = data.dadosClimaticos ? data.dadosClimaticos.temperaturaC : 0;
-const ventoReal = data.dadosClimaticos ? data.dadosClimaticos.velocidadeVentoKmH : 0;
+        // --- ATUALIZAÇÃO DA TELA ---
+        msg.innerHTML = `
+            <h2>${emoji} Risco de Atraso: ${probPerc}%</h2>
+            <p>🌡️ ${Number(tempReal).toFixed(1)}°C | 🌬️ ${Number(ventoReal).toFixed(1)} km/h</p>
+            <span class="info-rota">${orig} ➔ ${dest}</span>
+            <div id="container-alertas" style="margin-top:10px;">
+                ${alertas.map(a => `<p style="color:#f1c40f; font-size:0.9rem; margin:2px 0;">${a}</p>`).join('')}
+            </div>
+        `;
 
-// Agora atualiza a mensagem na tela com segurança
-msg.innerHTML = `
-    <h2>${emoji} Risco de Atraso: ${probPerc}%</h2>
-    <p>🌡️ ${Number(tempReal).toFixed(1)}°C | 🌬️ ${Number(ventoReal).toFixed(1)} km/h</p>
-    <span class="info-rota">${orig} ➔ ${dest}</span>
-`;
-
-        // ALIMENTA O HISTÓRICO COM OS DADOS REAIS
-        adicionarAoHistorico(orig, dest, tempReal.toFixed(1), ventoReal.toFixed(1), probPerc);
+        adicionarAoHistorico(orig, dest, tempReal, ventoReal, probPerc);
 
     } catch (e) {
         console.error(e);
@@ -188,11 +173,12 @@ function adicionarAoHistorico(orig, dest, temp, vento, prob){
 
     row.innerHTML = `
         <td><strong>${orig}</strong> ➔ <strong>${dest}</strong></td>
-        <td>${temp}°C</td>
-        <td>${vento} km/h</td>
+        <td>${Number(temp).toFixed(1)}°C</td>
+        <td>${Number(vento).toFixed(1)} km/h</td>
         <td><span class="badge ${badge}">${prob}%</span></td>
     `;
-} 
+}
+
 </script>
 
 </body>
