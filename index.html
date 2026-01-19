@@ -13,6 +13,39 @@
         .loading-text { color: var(--secondary); font-weight: bold; animation: blink 1.5s infinite; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         .info-rota { font-size: 0.8rem; opacity: 0.8; margin-top: 5px; display: block; }
+        /* Estilo para a caixa de alertas que criamos no JS */
+#container-alertas {
+    background: rgba(241, 196, 15, 0.1);
+    border-left: 4px solid #f1c40f;
+    padding: 10px;
+    margin-top: 15px;
+    border-radius: 4px;
+    text-align: left;
+}
+
+#container-alertas p {
+    margin: 5px 0;
+    font-weight: bold;
+    color: #f1c40f;
+    animation: flash-alert 2s infinite;
+}
+
+@keyframes flash-alert {
+    0% { opacity: 1; }
+    50% { opacity: 0.6; }
+    100% { opacity: 1; }
+}
+
+/* Deixa a info da rota elegante */
+.info-rota {
+    display: block;
+    background: #34495e;
+    padding: 5px;
+    border-radius: 20px;
+    margin: 10px 0;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
     </style>
 </head>
 
